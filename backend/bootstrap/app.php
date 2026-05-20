@@ -30,13 +30,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                return response()->json(['message' => 'Not found'], 404);
+                return response()->json(['message' => 'Not found', '_path' => $request->path(), '_method' => $request->method()], 404);
             }
         });
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                return response()->json(['message' => 'Method not allowed'], 405);
+                return response()->json(['message' => 'Method not allowed', '_path' => $request->path(), '_method' => $request->method()], 405);
             }
         });
 
