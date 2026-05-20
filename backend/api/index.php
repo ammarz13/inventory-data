@@ -58,6 +58,5 @@ try {
 // Step 6: handle request
 $app->useStoragePath($storagePath);
 
-echo json_encode(['step' => 'all_ok', 'db_source_exists' => file_exists($dbSource), 'db_dest_exists' => file_exists($dbDest), 'db_copied' => $dbCopied, 'info' => $info]);
-// Uncomment when ready to go live:
-// $app->handleRequest(Illuminate\Http\Request::capture());
+// Step 7: handle request
+$app->handleRequest(Illuminate\Http\Request::capture());

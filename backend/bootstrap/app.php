@@ -42,17 +42,25 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Illuminate\Database\QueryException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                $message = app()->isProduction()
-                    ? 'Database error. Please try again later.'
-                    : $e->getMessage();
-                return response()->json(['message' => $message], 500);
+                return response()->json([
+                    'diag'  => true,
+                    'error' => $e->getMessage(),
+                    'class' => get_class($e),
+                    'file'  => str_replace('/var/task/', '', $e->getFile()),
+                    'line'  => $e->getLine(),
+                ], 200);
             }
         });
 
         $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                $message = app()->isProduction() ? 'Server error.' : $e->getMessage();
-                return response()->json(['message' => $message], 500);
+                return response()->json([
+                    'diag'  => true,
+                    'error' => $e->getMessage(),
+                    'class' => get_class($e),
+                    'file'  => str_replace('/var/task/', '', $e->getFile()),
+                    'line'  => $e->getLine(),
+                ], 200);
             }
         });
     })->create();
