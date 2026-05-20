@@ -28,10 +28,12 @@ export default function Login() {
 
   return (
     <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
-      <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to your InvenPro account</p>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Sign in to your account to continue</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} method="post" className="mt-8 space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} method="post" className="space-y-5">
         <FormField label="Email address" error={errors.email?.message} required>
           <div className="relative">
             <EnvelopeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -75,15 +77,16 @@ export default function Login() {
           </Link>
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-base">
+        <button type="submit" disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold text-base shadow-lg shadow-primary-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? (
-            <span className="flex items-center gap-2">
+            <>
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               Signing in…
-            </span>
+            </>
           ) : 'Sign in'}
         </button>
       </form>
