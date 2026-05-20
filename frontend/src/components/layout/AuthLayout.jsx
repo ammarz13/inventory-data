@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { CubeIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '../../hooks/useTheme'
 
@@ -20,20 +21,37 @@ export default function AuthLayout() {
         {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
       </button>
 
-      <div className="w-full max-w-sm relative z-10">
+      <motion.div
+        className="w-full max-w-sm relative z-10"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg">
+          <motion.div
+            className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3, ease: 'easeOut' }}
+          >
             <CubeIcon className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-slate-800 dark:text-white">InvenPro</span>
+          </motion.div>
+          <motion.span
+            className="text-2xl font-bold text-slate-800 dark:text-white"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+          >
+            InvenPro
+          </motion.span>
         </div>
 
         {/* Card */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/80 dark:shadow-slate-900/80 p-8 ring-1 ring-slate-200 dark:ring-slate-700">
           <Outlet />
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

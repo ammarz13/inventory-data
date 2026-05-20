@@ -1,16 +1,19 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { useDispatch } from 'react-redux'
+import { AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import Navbar from './Navbar'
+import PageTransition from '../common/PageTransition'
 import { selectSidebarOpen, selectSidebarMobileOpen, setSidebarMobile } from '../../store/uiSlice'
 
 export default function DashboardLayout() {
   const sidebarOpen = useSelector(selectSidebarOpen)
   const mobileOpen = useSelector(selectSidebarMobileOpen)
   const dispatch = useDispatch()
+  const location = useLocation()
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg)]">
@@ -48,8 +51,12 @@ export default function DashboardLayout() {
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-fade-in">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <AnimatePresence mode="wait" initial={false}>
+            <PageTransition key={location.pathname}>
+              <Outlet />
+            </PageTransition>
+          </AnimatePresence>
         </main>
       </div>
     </div>
