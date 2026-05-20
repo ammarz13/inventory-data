@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         api: __DIR__.'/../routes/api.php',
-        apiPrefix: 'api',
+        apiPrefix: '',
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
@@ -16,8 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // This backend is API-only — always return JSON for any /api/* request
-        $isApi = fn(Request $r) => str_starts_with($r->path(), 'api/') || $r->expectsJson();
+        // Pure API backend — always return JSON
+        $isApi = fn(Request $r) => true;
 
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
@@ -30,24 +30,27 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                return response()->json(['message' => 'Not found', '_path' => $request->path(), '_method' => $request->method()], 404);
+                return response()->json(['message' => 'Not found'], 404);
             }
         });
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                return response()->json(['message' => 'Method not allowed', '_path' => $request->path(), '_method' => $request->method()], 405);
+                return response()->json(['message' => 'Method not allowed'], 405);
             }
         });
 
-        // Always return JSON — this is a pure API backend, no view layer exists
-        $exceptions->render(function (\Throwable $e, Request $request) {
-            return response()->json([
-                'diag'  => true,
-                'error' => $e->getMessage(),
-                'class' => get_class($e),
-                'file'  => str_replace('/var/task/', '', $e->getFile()),
-                'line'  => $e->getLine(),
-            ], 200);
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, Request $request) use ($isApi) {
+            if ($isApi($request)) {
+                $msg = app()->isProduction() ? 'Database error.' : $e->getMessage();
+                return response()->json(['message' => $msg], 500);
+            }
+        });
+
+        $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
+            if ($isApi($request)) {
+                $msg = app()->isProduction() ? 'Server error.' : $e->getMessage();
+                return response()->json(['message' => $msg], 500);
+            }
         });
     })->create();
