@@ -88,11 +88,12 @@ export default function Login() {
         </button>
       </form>
 
-      {/* Demo credentials */}
+      {/* Demo credentials — hidden, kept for reference
       <div className="mt-6 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
         <p className="text-xs font-semibold text-primary-700 dark:text-primary-300 mb-2">Demo credentials</p>
         <p className="text-xs text-primary-600 dark:text-primary-400">admin@invenpro.com / password</p>
       </div>
+      */}
     </div>
   )
 }
