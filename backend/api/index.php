@@ -13,6 +13,21 @@ foreach ([
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 }
 
+// On Vercel, use the pre-built SQLite database — no external DB required
+if (getenv('VERCEL') === '1') {
+    $dbDest = '/tmp/invenpro.sqlite';
+    if (!file_exists($dbDest)) {
+        $dbSource = __DIR__ . '/../database/database.sqlite';
+        if (file_exists($dbSource)) copy($dbSource, $dbDest);
+    }
+    putenv('DB_CONNECTION=sqlite');
+    putenv("DB_DATABASE=$dbDest");
+    $_ENV['DB_CONNECTION']    = 'sqlite';
+    $_ENV['DB_DATABASE']      = $dbDest;
+    $_SERVER['DB_CONNECTION'] = 'sqlite';
+    $_SERVER['DB_DATABASE']   = $dbDest;
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
