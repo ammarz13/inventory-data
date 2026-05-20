@@ -40,27 +40,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (\Illuminate\Database\QueryException $e, Request $request) use ($isApi) {
-            if ($isApi($request)) {
-                return response()->json([
-                    'diag'  => true,
-                    'error' => $e->getMessage(),
-                    'class' => get_class($e),
-                    'file'  => str_replace('/var/task/', '', $e->getFile()),
-                    'line'  => $e->getLine(),
-                ], 200);
-            }
-        });
-
-        $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
-            if ($isApi($request)) {
-                return response()->json([
-                    'diag'  => true,
-                    'error' => $e->getMessage(),
-                    'class' => get_class($e),
-                    'file'  => str_replace('/var/task/', '', $e->getFile()),
-                    'line'  => $e->getLine(),
-                ], 200);
-            }
+        // Always return JSON — this is a pure API backend, no view layer exists
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            return response()->json([
+                'diag'  => true,
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+                'file'  => str_replace('/var/task/', '', $e->getFile()),
+                'line'  => $e->getLine(),
+            ], 200);
         });
     })->create();
