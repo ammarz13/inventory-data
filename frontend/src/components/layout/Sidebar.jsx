@@ -84,15 +84,14 @@ const sections = [
   },
 ]
 
-function NavGroup({ item }) {
+function NavGroup({ item, isOpen, onToggle }) {
   const location = useLocation()
   const isActive = item.children?.some((c) => location.pathname.startsWith(c.to))
-  const [open, setOpen] = useState(isActive)
 
   return (
     <div>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         className={clsx(
           'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
           isActive
@@ -106,13 +105,13 @@ function NavGroup({ item }) {
           </span>
           {item.label}
         </span>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronDownIcon className="w-3.5 h-3.5 opacity-60" />
         </motion.div>
       </button>
 
       <AnimatePresence initial={false}>
-        {open && (
+        {isOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -147,6 +146,15 @@ function NavGroup({ item }) {
 export default function Sidebar({ mobile = false }) {
   const dispatch = useDispatch()
   const user = useSelector(selectUser)
+  const location = useLocation()
+
+  // Accordion: only one group open at a time; default to whichever has an active child
+  const defaultOpen = sections
+    .flatMap((s) => s.items)
+    .find((item) => item.children?.some((c) => location.pathname.startsWith(c.to)))?.label ?? null
+  const [openKey, setOpenKey] = useState(defaultOpen)
+
+  const toggle = (label) => setOpenKey((prev) => (prev === label ? null : label))
 
   return (
     <aside className="flex flex-col h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 w-64 shrink-0">
@@ -177,7 +185,7 @@ export default function Sidebar({ mobile = false }) {
             <div className="space-y-0.5">
               {section.items.map((item) =>
                 item.children ? (
-                  <NavGroup key={item.label} item={item} />
+                  <NavGroup key={item.label} item={item} isOpen={openKey === item.label} onToggle={() => toggle(item.label)} />
                 ) : (
                   <NavLink
                     key={item.to}
