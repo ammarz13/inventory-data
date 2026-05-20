@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import PageHeader from '../../components/common/PageHeader'
 import FormField, { FormRow } from '../../components/common/FormField'
-import { selectUser } from '../../store/authSlice'
+import { selectUser, setUser } from '../../store/authSlice'
 import { selectTheme, setTheme } from '../../store/uiSlice'
+import api from '../../services/api'
 import {
   UserCircleIcon, BellIcon, ShieldCheckIcon, Cog6ToothIcon,
   MoonIcon, SunIcon, ComputerDesktopIcon,
@@ -25,10 +26,35 @@ export default function Settings() {
   const theme = useSelector(selectTheme)
   const dispatch = useDispatch()
   const [activeTab, setActiveTab] = useState('profile')
-  const { register, handleSubmit } = useForm({ defaultValues: { name: user?.name, email: user?.email, phone: '', company: 'InvenPro Inc.', currency: 'PKR', timezone: 'Asia/Karachi' } })
+  const { register, handleSubmit } = useForm({ defaultValues: { name: user?.name, email: user?.email } })
+  const { register: registerPwd, handleSubmit: handlePwd, reset: resetPwd, formState: { errors: pwdErrors } } = useForm()
 
-  const onSaveProfile = (data) => toast.success('Profile updated!')
-  const onChangePassword = () => toast.success('Password changed!')
+  const onSaveProfile = async (data) => {
+    try {
+      const res = await api.put('/profile', { name: data.name, email: data.email })
+      dispatch(setUser(res.data.data))
+      toast.success('Profile updated!')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update profile')
+    }
+  }
+
+  const onChangePassword = async (data) => {
+    try {
+      await api.put('/profile/password', {
+        current_password: data.current_password,
+        password: data.password,
+        password_confirmation: data.password_confirmation,
+      })
+      toast.success('Password changed successfully!')
+      resetPwd()
+    } catch (err) {
+      const errors = err.response?.data?.errors
+      if (errors?.current_password) toast.error(errors.current_password[0])
+      else if (errors?.password) toast.error(errors.password[0])
+      else toast.error(err.response?.data?.message || 'Failed to change password')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -154,20 +180,20 @@ export default function Settings() {
           {activeTab === 'security' && (
             <div className="card space-y-5">
               <h2 className="font-semibold text-slate-900 dark:text-slate-100">Change Password</h2>
-              <div className="space-y-4">
-                <FormField label="Current Password">
-                  <input type="password" className="input" placeholder="••••••••" />
+              <form onSubmit={handlePwd(onChangePassword)} className="space-y-4">
+                <FormField label="Current Password" error={pwdErrors.current_password?.message}>
+                  <input type="password" {...registerPwd('current_password', { required: 'Required' })} className="input" placeholder="••••••••" />
                 </FormField>
-                <FormField label="New Password">
-                  <input type="password" className="input" placeholder="••••••••" />
+                <FormField label="New Password" error={pwdErrors.password?.message}>
+                  <input type="password" {...registerPwd('password', { required: 'Required', minLength: { value: 8, message: 'At least 8 characters' } })} className="input" placeholder="••••••••" />
                 </FormField>
-                <FormField label="Confirm New Password">
-                  <input type="password" className="input" placeholder="••••••••" />
+                <FormField label="Confirm New Password" error={pwdErrors.password_confirmation?.message}>
+                  <input type="password" {...registerPwd('password_confirmation', { required: 'Required' })} className="input" placeholder="••••••••" />
                 </FormField>
                 <div className="flex justify-end">
-                  <button onClick={onChangePassword} className="btn-primary">Update Password</button>
+                  <button type="submit" className="btn-primary">Update Password</button>
                 </div>
-              </div>
+              </form>
             </div>
           )}
 
