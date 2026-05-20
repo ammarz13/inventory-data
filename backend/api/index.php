@@ -23,18 +23,7 @@ if (!file_exists($autoload)) {
 }
 require $autoload;
 
-// Step 2: SQLite — copy pre-seeded DB to writable /tmp
-$dbDest   = '/tmp/invenpro.sqlite';
-$dbSource = __DIR__ . '/../database/database.sqlite';
-if (!file_exists($dbDest) && file_exists($dbSource)) {
-    copy($dbSource, $dbDest);
-}
-putenv('DB_CONNECTION=sqlite');
-putenv("DB_DATABASE=$dbDest");
-$_ENV['DB_CONNECTION'] = $_SERVER['DB_CONNECTION'] = 'sqlite';
-$_ENV['DB_DATABASE']   = $_SERVER['DB_DATABASE']   = $dbDest;
-
-// Step 3: writable storage in /tmp
+// Step 2: writable storage in /tmp
 $storagePath = '/tmp/storage';
 foreach ([
     "$storagePath/app", "$storagePath/app/public",
@@ -44,7 +33,7 @@ foreach ([
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 }
 
-// Step 4: writable bootstrap/cache in /tmp
+// Step 3: writable bootstrap/cache in /tmp
 // PackageManifest tries to write here; /var/task is read-only on Vercel
 $bootstrapCache = '/tmp/bootstrap/cache';
 if (!is_dir($bootstrapCache)) mkdir($bootstrapCache, 0777, true);
@@ -56,7 +45,7 @@ foreach (['packages.php', 'services.php'] as $f) {
     }
 }
 
-// Step 5: bootstrap app
+// Step 4: bootstrap app
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 } catch (\Throwable $e) {
@@ -69,7 +58,7 @@ try {
 $app->useStoragePath($storagePath);
 $app->useBootstrapPath('/tmp/bootstrap');
 
-// Step 6: handle request
+// Step 5: handle request
 $request = Illuminate\Http\Request::capture();
 try {
     $app->handleRequest($request);
