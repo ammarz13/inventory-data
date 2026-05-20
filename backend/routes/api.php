@@ -31,6 +31,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me',      [AuthController::class, 'me']);
 
+    // Profile
+    Route::put('/profile', function (Illuminate\Http\Request $request) {
+        $user = $request->user();
+        $data = $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ]);
+        $user->update($data);
+        return response()->json(['message' => 'Profile updated', 'data' => array_merge($user->fresh()->toArray(), ['role' => $user->getRoleNames()->first() ?? 'admin'])]);
+    });
+
+    Route::put('/profile/password', function (Illuminate\Http\Request $request) {
+        $request->validate([
+            'current_password'      => 'required',
+            'password'              => 'required|min:8|confirmed',
+            'password_confirmation' => 'required',
+        ]);
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $request->user()->password)) {
+            return response()->json(['message' => 'Validation failed', 'errors' => ['current_password' => ['Current password is incorrect.']]], 422);
+        }
+        $request->user()->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+        return response()->json(['message' => 'Password changed successfully']);
+    });
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
