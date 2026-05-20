@@ -2,7 +2,7 @@
 
 define('LARAVEL_START', microtime(true));
 
-// Vercel serverless: only /tmp is writable at runtime
+// Vercel: only /tmp is writable at runtime
 $storagePath = '/tmp/storage';
 foreach ([
     "$storagePath/framework/sessions",
@@ -10,9 +10,7 @@ foreach ([
     "$storagePath/framework/cache/data",
     "$storagePath/logs",
 ] as $dir) {
-    if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
-    }
+    if (!is_dir($dir)) mkdir($dir, 0777, true);
 }
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -20,11 +18,4 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 $app->useStoragePath($storagePath);
 
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-
-$response = $kernel->handle(
-    $request = Illuminate\Http\Request::capture()
-);
-
-$response->send();
-$kernel->terminate($request, $response);
+$app->handleRequest(Illuminate\Http\Request::capture());
