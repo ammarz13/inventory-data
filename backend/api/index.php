@@ -7,10 +7,10 @@ $info = [
     'php'        => PHP_VERSION,
     'vercel'     => getenv('VERCEL'),
     'cwd'        => getcwd(),
-    'extensions' => ['pdo' => extension_loaded('pdo'), 'pdo_sqlite' => extension_loaded('pdo_sqlite'), 'pdo_pgsql' => extension_loaded('pdo_pgsql')],
+    'dir'        => __DIR__,
+    'extensions' => ['pdo_sqlite' => extension_loaded('pdo_sqlite'), 'pdo_pgsql' => extension_loaded('pdo_pgsql')],
 ];
 
-// Catch PHP fatal errors (uncatchable by try/catch) via shutdown
 ob_start();
 register_shutdown_function(function () {
     $err = error_get_last();
@@ -28,32 +28,23 @@ register_shutdown_function(function () {
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if (!file_exists($autoload)) {
     ob_clean();
-    echo json_encode(['step' => 'vendor_missing', 'path' => $autoload, 'info' => $info]);
+    echo json_encode(['step' => 'vendor_missing', 'tried' => $autoload, 'info' => $info]);
     exit;
 }
+require $autoload;
 
-// Step 2: load autoloader
-try {
-    require $autoload;
-} catch (\Throwable $e) {
-    ob_clean();
-    echo json_encode(['step' => 'autoload_failed', 'error' => $e->getMessage(), 'info' => $info]);
-    exit;
-}
-
-// Step 3: SQLite setup
+// Step 2: SQLite setup
 $dbDest   = '/tmp/invenpro.sqlite';
 $dbSource = __DIR__ . '/../database/database.sqlite';
-$dbCopied = false;
 if (!file_exists($dbDest) && file_exists($dbSource)) {
-    $dbCopied = copy($dbSource, $dbDest);
+    copy($dbSource, $dbDest);
 }
 putenv('DB_CONNECTION=sqlite');
 putenv("DB_DATABASE=$dbDest");
 $_ENV['DB_CONNECTION'] = $_SERVER['DB_CONNECTION'] = 'sqlite';
 $_ENV['DB_DATABASE']   = $_SERVER['DB_DATABASE']   = $dbDest;
 
-// Step 4: storage dirs
+// Step 3: storage dirs
 $storagePath = '/tmp/storage';
 foreach ([
     "$storagePath/app", "$storagePath/app/public",
@@ -63,28 +54,53 @@ foreach ([
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 }
 
-// Step 5: bootstrap
+// Step 4: create app
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 } catch (\Throwable $e) {
     ob_clean();
-    echo json_encode(['step' => 'bootstrap_failed', 'error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine(), 'info' => $info]);
+    echo json_encode(['step' => 'bootstrap_failed', 'error' => $e->getMessage(), 'info' => $info]);
     exit;
 }
-
 $app->useStoragePath($storagePath);
 
-// Step 6: handle request — crash here will be caught by shutdown function above
-try {
-    $app->handleRequest(Illuminate\Http\Request::capture());
-} catch (\Throwable $e) {
-    ob_clean();
-    echo json_encode([
-        'step'  => 'handle_request_exception',
-        'error' => $e->getMessage(),
-        'class' => get_class($e),
-        'file'  => str_replace('/var/task/', '', $e->getFile()),
-        'line'  => $e->getLine(),
-        'info'  => $info,
-    ]);
+// Step 5: run each bootstrapper individually to find which one fails
+$bootstrappers = [
+    \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+    \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+    \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+    \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+    \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+    \Illuminate\Foundation\Bootstrap\BootProviders::class,
+];
+
+foreach ($bootstrappers as $bs) {
+    try {
+        $app->make($bs)->bootstrap($app);
+    } catch (\Throwable $e) {
+        ob_clean();
+        echo json_encode([
+            'step'         => 'bootstrapper_failed',
+            'bootstrapper' => class_basename($bs),
+            'error'        => $e->getMessage(),
+            'class'        => get_class($e),
+            'file'         => str_replace('/var/task/', '', $e->getFile()),
+            'line'         => $e->getLine(),
+            'info'         => $info,
+        ]);
+        exit;
+    }
 }
+
+// Step 6: check if view is bound after all providers registered
+$viewBound  = $app->bound('view');
+$keyPresent = !empty(config('app.key'));
+
+ob_clean();
+echo json_encode([
+    'step'       => 'providers_ok',
+    'view_bound' => $viewBound,
+    'key_set'    => $keyPresent,
+    'db_conn'    => config('database.default'),
+    'info'       => $info,
+]);
