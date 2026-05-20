@@ -18,9 +18,7 @@ export default function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg)]">
       {/* Desktop Sidebar */}
-      <div
-        className={`hidden lg:flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}
-      >
+      <div className={`hidden lg:flex transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
         {sidebarOpen && <Sidebar />}
       </div>
 
