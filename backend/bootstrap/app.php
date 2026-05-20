@@ -48,8 +48,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
-                $msg = app()->environment('production') ? 'Server error.' : $e->getMessage();
-                return response()->json(['message' => $msg], 500);
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'class'   => get_class($e),
+                    'file'    => str_replace('/var/task/', '', $e->getFile()),
+                    'line'    => $e->getLine(),
+                ], 500);
             }
         });
     })->create();
