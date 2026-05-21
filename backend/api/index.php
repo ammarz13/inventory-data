@@ -23,7 +23,23 @@ if (!file_exists($autoload)) {
 }
 require $autoload;
 
-// Step 2: writable storage in /tmp
+// Step 2: force PostgreSQL via Supabase pooler (IPv4, works on Vercel)
+// Direct Supabase host is IPv6-only; pooler resolves to IPv4.
+// Also ensures env vars are set even if Dotenv can't override process env.
+foreach ([
+    'DB_CONNECTION' => 'pgsql',
+    'DB_HOST'       => 'aws-0-ap-southeast-1.pooler.supabase.com',
+    'DB_PORT'       => '6543',
+    'DB_DATABASE'   => 'postgres',
+    'DB_USERNAME'   => 'postgres.lbqrtatskwpxrafhaqmd',
+    'DB_PASSWORD'   => 'Opgrx9Oftg6VcE50',
+    'DB_SSLMODE'    => 'require',
+] as $k => $v) {
+    putenv("$k=$v");
+    $_ENV[$k] = $_SERVER[$k] = $v;
+}
+
+// Step 3: writable storage in /tmp
 $storagePath = '/tmp/storage';
 foreach ([
     "$storagePath/app", "$storagePath/app/public",
@@ -33,7 +49,7 @@ foreach ([
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 }
 
-// Step 3: writable bootstrap/cache in /tmp
+// Step 4: writable bootstrap/cache in /tmp
 // PackageManifest tries to write here; /var/task is read-only on Vercel
 $bootstrapCache = '/tmp/bootstrap/cache';
 if (!is_dir($bootstrapCache)) mkdir($bootstrapCache, 0777, true);
@@ -45,7 +61,7 @@ foreach (['packages.php', 'services.php'] as $f) {
     }
 }
 
-// Step 4: bootstrap app
+// Step 5: bootstrap app
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 } catch (\Throwable $e) {
@@ -58,7 +74,7 @@ try {
 $app->useStoragePath($storagePath);
 $app->useBootstrapPath('/tmp/bootstrap');
 
-// Step 5: handle request
+// Step 6: handle request
 $request = Illuminate\Http\Request::capture();
 try {
     $app->handleRequest($request);
