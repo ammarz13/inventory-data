@@ -28,11 +28,11 @@ require $autoload;
 // Also ensures env vars are set even if Dotenv can't override process env.
 foreach ([
     'DB_CONNECTION' => 'pgsql',
-    'DB_HOST'       => 'aws-0-ap-southeast-1.pooler.supabase.com',
-    'DB_PORT'       => '6543',
-    'DB_DATABASE'   => 'postgres',
-    'DB_USERNAME'   => 'postgres.lbqrtatskwpxrafhaqmd',
-    'DB_PASSWORD'   => 'Opgrx9Oftg6VcE50',
+    'DB_HOST'       => 'ep-withered-forest-ap6stnl2-pooler.c-7.us-east-1.aws.neon.tech',
+    'DB_PORT'       => '5432',
+    'DB_DATABASE'   => 'neondb',
+    'DB_USERNAME'   => 'neondb_owner',
+    'DB_PASSWORD'   => 'npg_0CGYP7AeoRvB',
     'DB_SSLMODE'    => 'require',
 ] as $k => $v) {
     putenv("$k=$v");
